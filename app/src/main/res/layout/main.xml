@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/scrollView"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:layout_gravity="center">
+
+    <LinearLayout
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
+
+        <!--<LinearLayout-->
+        <!--android:layout_width="320dp"-->
+        <!--android:layout_height="40dp"-->
+        <!--android:orientation="horizontal">-->
+
+        <!--<Button-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/imageSpeedTest"-->
+        <!--android:onClick="imageSpeedTest"-->
+        <!--android:id="@+id/speed_test" android:layout_gravity="left|center_vertical"/>-->
+        <!--<Button-->
+        <!--android:layout_width="wrap_content"-->
+        <!--android:layout_height="wrap_content"-->
+        <!--android:text="@string/textSpeedTest"-->
+        <!--android:onClick="textSpeedTest"-->
+        <!--android:id="@+id/textSpeedButton" android:layout_gravity="center"/>-->
+        <!--</LinearLayout>-->
+
+        <LinearLayout
+            android:layout_width="320dp"
+            android:layout_height="40dp"
+            android:layout_marginTop="10dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_randomWriteSDCard"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:onClick="btnRandomWriteSDCardClick"
+                android:text="@string/randomWriteSDCard" />
+
+            <Button
+                android:id="@+id/btn_guessWhereAmI"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:onClick="btnGuessWhereAmIClick"
+                android:text="@string/guessWhereAmI" />
+
+            <Button
+                android:id="@+id/btn_scanNetwork"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:onClick="btnScanNetworkClick"
+                android:text="@string/scanNetwork" />
+            <!--<Button-->
+            <!--android:layout_width="wrap_content"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:text="@string/deleteSpeedTestLog"-->
+            <!--android:onClick="deleteSpeedTestLog"-->
+            <!--android:id="@+id/delete_speed_test_log" android:layout_gravity="center"/>-->
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="320dp"
+            android:layout_height="40dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btn_clearOutput"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:onClick="clearOutput"
+                android:text="@string/clearOutput" />
+
+            <Button
+                android:id="@+id/btn_performanceMonitor"
+                android:layout_width="110dp"
+                android:layout_height="wrap_content"
+                android:onClick="btnPerformanceMonitorClick"
+                android:text="@string/performanceMonitor" />
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tv_information"
+            android:layout_width="fill_parent"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+</ScrollView>
+
+

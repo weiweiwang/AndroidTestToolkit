@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="horizontal">
+
+    <ImageView
+        android:id="@+id/app_icon"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/demo_icon"/>
+
+    <TextView
+        android:id="@+id/app_pkg"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toRightOf="@id/app_icon"
+        android:layout_marginTop="18dip"
+        android:text="@string/demoString"
+        android:paddingRight="10dp"/>
+
+    <Button
+        android:id="@+id/app_choose_button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_alignParentRight="true"
+        android:text="@string/chooseApp" />
+</RelativeLayout>

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="randomWriteSDCard">随机写SD卡</string>
+    <string name="textSpeedTest">文本网速测试</string>
+    <string name="imageSpeedTest">图片网速测试</string>
+    <string name="downloading">下载中...</string>
+    <string name="deleteSpeedTestLog">删除测速日志</string>
+    <string name="app_name">安卓测试工具包</string>
+    <string name="guessWhereAmI">猜猜我是谁</string>
+    <string name="scanNetwork">局域网扫描</string>
+    <string name="performanceMonitor">性能监控</string>
+    <string name="performanceMonitorInProgress">停止性能监控</string>
+    <string name="clearOutput">清除输出</string>
+    <string name="chooseAppDialogTitle">请选择应用</string>
+    <string name="chooseApp">选择</string>
+    <string name="demoString">这是一个布局调试用字符串</string>
+</resources>
+
