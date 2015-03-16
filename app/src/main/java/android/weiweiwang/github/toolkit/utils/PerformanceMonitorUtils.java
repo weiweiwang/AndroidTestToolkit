@@ -23,12 +23,16 @@ public class PerformanceMonitorUtils {
     private static final String TAG = "AndroidTestToolkit.PerformanceMonitorUtils";
 
     /**
+     * 需要注意的是这里面内存的单位有区别，在使用的时候需要注意
+     *
      * @param runningAppProcessInfoList
      * @param activityManager
-     * @return {"com.wandoujia.phoenix2":{"dalvikPrivateClean":0,"dalvikPrivateDirty":6180,"dalvikPss":6570,"dalvikSharedClean":0,"dalvikSharedDirty":16788,"dalvikSwappablePss":0,"dalvikSwappedOut":0,"nativePrivateClean":0,"nativePrivateDirty":10564,"nativePss":10625,"nativeSharedClean":0,"nativeSharedDirty":2344,"nativeSwappablePss":0,"nativeSwappedOut":0,"otherPrivateClean":3876,"otherPrivateDirty":2248,"otherPss":12646,"otherSharedClean":35036,"otherSharedDirty":4352,"otherSwappablePss":3872,"otherSwappedOut":0,"totalPrivateClean":3876,"totalPrivateDirty":18992,"totalPss":29841,"totalSharedClean":35036,"totalSharedDirty":23484,"totalSwappablePss":3872,"totalSwappedOut":0,"totalUss":22868,"pid":9244,"uid":10089,"process_name":"com.wandoujia.phoenix2"},"com.wandoujia.player.walkman":{"dalvikPrivateClean":0,"dalvikPrivateDirty":11304,"dalvikPss":11695,"dalvikSharedClean":0,"dalvikSharedDirty":16804,"dalvikSwappablePss":0,"dalvikSwappedOut":0,"nativePrivateClean":0,"nativePrivateDirty":9416,"nativePss":9491,"nativeSharedClean":0,"nativeSharedDirty":2360,"nativeSwappablePss":0,"nativeSwappedOut":0,"otherPrivateClean":2608,"otherPrivateDirty":3508,"otherPss":14857,"otherSharedClean":41900,"otherSharedDirty":4344,"otherSwappablePss":2560,"otherSwappedOut":0,"totalPrivateClean":2608,"totalPrivateDirty":24228,"totalPss":36043,"totalSharedClean":41900,"totalSharedDirty":23508,"totalSwappablePss":2560,"totalSwappedOut":0,"totalUss":26836,"pid":10575,"uid":10089,"process_name":"com.wandoujia.player.walkman"}}
+     * @return
      */
     public static ObjectNode getAppMemoryUsage(List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfoList, ActivityManager activityManager) {
-        ObjectNode appMemoryInfoObject = new ObjectNode(CommonUtils.OBJECT_MAPPER.getNodeFactory());
+        ObjectNode appMemoryUsageObject = new ObjectNode(CommonUtils.OBJECT_MAPPER.getNodeFactory());
+        ObjectNode appProcessMemoryUsage = new ObjectNode(CommonUtils.OBJECT_MAPPER.getNodeFactory());
+        long total = 0;
         for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcessInfoList) {
             int pid = runningAppProcessInfo.pid;
             // 用户ID 类似于Linux的权限不同，ID也就不同 比如 root等
@@ -40,14 +44,21 @@ public class PerformanceMonitorUtils {
             // 此MemoryInfo位于android.os.Debug.MemoryInfo包中，用来统计进程的内存信息
             Debug.MemoryInfo memoryInfo = activityManager
                     .getProcessMemoryInfo(myMempid)[0];
+            total += memoryInfo.getTotalPss();
             // 获取进程占内存用信息 kb单位
             ObjectNode processMemoryInfoObject = CommonUtils.OBJECT_MAPPER.convertValue(memoryInfo, ObjectNode.class);
             processMemoryInfoObject.put("pid", pid);
             processMemoryInfoObject.put("uid", uid);
             processMemoryInfoObject.put("process_name", processName);
-            appMemoryInfoObject.set(processName, processMemoryInfoObject);
+            appProcessMemoryUsage.set(processName, processMemoryInfoObject);
         }
-        return appMemoryInfoObject;
+
+        ActivityManager.MemoryInfo outInfo = new ActivityManager.MemoryInfo();
+        activityManager.getMemoryInfo(outInfo);
+        appMemoryUsageObject.put("total", total);
+        appMemoryUsageObject.set("processes", appProcessMemoryUsage);
+        appMemoryUsageObject.set("system", CommonUtils.OBJECT_MAPPER.convertValue(outInfo, ObjectNode.class));
+        return appMemoryUsageObject;
     }
 
     /**
@@ -135,12 +146,11 @@ public class PerformanceMonitorUtils {
     }
 
     /**
-     *
      * @param applicationInfo
      * @param activityManager
      * @return
      */
-    public static  List<ActivityManager.RunningAppProcessInfo> getRunningAppProcessesForApplication(ApplicationInfo applicationInfo,ActivityManager activityManager) {
+    public static List<ActivityManager.RunningAppProcessInfo> getRunningAppProcessesForApplication(ApplicationInfo applicationInfo, ActivityManager activityManager) {
         List<ActivityManager.RunningAppProcessInfo> result = new ArrayList<ActivityManager.RunningAppProcessInfo>();
         List<ActivityManager.RunningAppProcessInfo> runningAppProcessInfoList = activityManager.getRunningAppProcesses();
         for (ActivityManager.RunningAppProcessInfo runningAppProcessInfo : runningAppProcessInfoList) {
@@ -152,7 +162,7 @@ public class PerformanceMonitorUtils {
         return result;
     }
 
-    public static List<ApplicationInfo> getRunningPackages(ActivityManager activityManager,PackageManager packageManager) {
+    public static List<ApplicationInfo> getRunningPackages(ActivityManager activityManager, PackageManager packageManager) {
         List<ActivityManager.RunningAppProcessInfo> appProcessList = activityManager
                 .getRunningAppProcesses();
         Set<String> runningPackages = new HashSet<String>();

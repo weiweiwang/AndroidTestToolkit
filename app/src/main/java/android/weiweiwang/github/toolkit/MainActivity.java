@@ -11,7 +11,6 @@ import android.net.DhcpInfo;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Bundle;
-import android.os.Debug;
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
@@ -19,7 +18,7 @@ import android.telephony.CellInfo;
 import android.telephony.CellLocation;
 import android.telephony.TelephonyManager;
 import android.text.TextUtils;
-import android.util.Log;
+import android.text.method.ScrollingMovementMethod;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -32,28 +31,23 @@ import android.widget.TextView;
 
 import com.fasterxml.jackson.databind.node.ObjectNode;
 
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.params.ClientPNames;
-import org.apache.http.client.params.CookiePolicy;
-import org.apache.http.client.params.HttpClientParams;
-import org.apache.http.conn.scheme.PlainSocketFactory;
-import org.apache.http.conn.scheme.Scheme;
-import org.apache.http.conn.scheme.SchemeRegistry;
-import org.apache.http.conn.ssl.SSLSocketFactory;
-import org.apache.http.impl.client.DefaultHttpClient;
-import org.apache.http.impl.client.DefaultHttpRequestRetryHandler;
-import org.apache.http.impl.conn.tsccm.ThreadSafeClientConnManager;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.params.HttpProtocolParams;
-
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.Writer;
 import java.net.InetAddress;
 import java.text.SimpleDateFormat;
-import java.util.*;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Timer;
+import java.util.TimerTask;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
@@ -74,7 +68,7 @@ public class MainActivity extends Activity {
      */
     public static final File APP_DATA_BASE_DIR = new File(SDCARD_DIR, ".AndroidTestToolkit");
 
-    private TextView informationTextView;
+    private TextView textViewInformation;
     private Button btnPerformanceMonitor;
     private ActivityManager mActivityManager = null;
     private PackageManager packageManager;
@@ -105,11 +99,11 @@ public class MainActivity extends Activity {
     };
 
     private void updateText(String text) {
-        informationTextView.setText(text);
+        textViewInformation.setText(text);
     }
 
     private void appendText(String text) {
-        informationTextView.append(text);
+        textViewInformation.append(text);
     }
 
 
@@ -120,7 +114,7 @@ public class MainActivity extends Activity {
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main);
-        informationTextView = (TextView) findViewById(R.id.tv_information);
+        textViewInformation = (TextView) findViewById(R.id.tv_information);
         btnPerformanceMonitor = (Button) findViewById(R.id.btn_performanceMonitor);
         codeDistrictMap = new HashMap<String, String>();
         threadPoolExecutor.submit(new Runnable() {
@@ -132,6 +126,7 @@ public class MainActivity extends Activity {
         //获得ActivityManager服务的对象
         mActivityManager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         packageManager = getPackageManager();
+        textViewInformation.setMovementMethod(new ScrollingMovementMethod());
     }
 
 
@@ -151,10 +146,10 @@ public class MainActivity extends Activity {
         String networkOperator = tm.getNetworkOperator();
         String networkOperatorName = tm.getNetworkOperatorName();
         if (TextUtils.isEmpty(iccid)) {
-            informationTextView.append("Sim not found\n");
+            textViewInformation.append("Sim not found\n");
         } else {
             ICCID iccidInfo = new ICCID(iccid, codeDistrictMap);
-            informationTextView.append(String.format("imei:%s\ntel:%s\niccid:%s\nimsi:%s\noperator:%s\nprovince:%s\n", imei, tel, iccid, imsi, networkOperator + "->" + iccidInfo.getOperatorName(), iccidInfo.getProvinceName()));
+            textViewInformation.append(String.format("imei:%s\ntel:%s\niccid:%s\nimsi:%s\noperator:%s\nprovince:%s\n", imei, tel, iccid, imsi, networkOperator + "->" + iccidInfo.getOperatorName(), iccidInfo.getProvinceName()));
         }
     }
 
@@ -232,7 +227,7 @@ public class MainActivity extends Activity {
                 long end = System.currentTimeMillis();
                 sendAppendTextMsg(String.format("time used:%.2f seconds\n", (end - start) / 1000.0));
             } catch (Exception e) {
-                sendAppendTextMsg(e.toString()+"\n");
+                sendAppendTextMsg(e.toString() + "\n");
                 Logger.w(TAG, e.toString(), e);
             }
         }
@@ -258,7 +253,7 @@ public class MainActivity extends Activity {
                 }
             }
         } catch (Exception e) {
-            Logger.w(TAG, e.toString(),e);
+            Logger.w(TAG, e.toString(), e);
         }
         return null;
     }
@@ -311,6 +306,7 @@ public class MainActivity extends Activity {
 
     /**
      * 读取配置文件random_dirs.conf,这个文件中每行一个路径，程序会在每个路径下面写入一个随机文件
+     *
      * @param view
      */
     public void btnRandomWriteSDCardClick(View view) {
@@ -349,23 +345,18 @@ public class MainActivity extends Activity {
                     }
                 }
             }
-            informationTextView.setText(String.format("Done created %d directories!", count));
+            textViewInformation.append(String.format("Done created %d directories!\n", count));
         } catch (Exception e) {
             Logger.d(TAG, e.toString(), e);
-            informationTextView.setText(e.toString());
+            textViewInformation.append(e.toString() + "\n");
         } finally {
-            try {
-                reader.close();
-            } catch (IOException e) {
-                Logger.d(TAG, e.toString(), e);
-                e.printStackTrace();
-            }
+            CommonUtils.closeQuietly(reader);
         }
     }
 
 
     public void clearOutput(View view) {
-        informationTextView.setText("");
+        textViewInformation.setText("");
     }
 
 
@@ -381,17 +372,17 @@ public class MainActivity extends Activity {
             timer.scheduleAtFixedRate(new PerformanceMonitorTask(applicationInfo, performanceLogWriter), 0, 10000);
             btnPerformanceMonitor.setText(R.string.performanceMonitorInProgress);
             btnPerformanceMonitor.setTag(MONITOR_STATUS_IN_PROGRESS);
-            informationTextView.append(String.format("performance monitoring started, performance log file:%s\n", performanceLogFile.getAbsolutePath()));
+            textViewInformation.append(String.format("performance monitoring started, performance log file:%s\n", performanceLogFile.getAbsolutePath()));
         } catch (Exception e) {
             Logger.w(TAG, "failed to create performance log writer", e);
-            informationTextView.append("failed to start performance monitor\n");
+            textViewInformation.append("failed to start performance monitor\n");
         }
     }
 
     public void stopPerformanceMonitor() {
         timer.cancel();
         timer = new Timer();
-        informationTextView.append("performance monitoring stopped\n");
+        textViewInformation.append("performance monitoring stopped\n");
         CommonUtils.closeQuietly(performanceLogWriter);
         btnPerformanceMonitor.setText(R.string.performanceMonitor);
         btnPerformanceMonitor.setTag(null);
@@ -449,6 +440,8 @@ public class MainActivity extends Activity {
 
             monitorInfoObject.set("cpu", appCpuInfoObject);
             monitorInfoObject.set("memory", appMemoryInfoObject);
+
+            long currentAppMemoryUsage = appMemoryInfoObject.path("total").longValue();//KB
             long currentSystemCpuTotal = appCpuInfoObject.path("system").path("total").longValue();
             long currentAppCpuTotal = appCpuInfoObject.path("processes").path("total").longValue();
             long currentSystemCpuIdle = appCpuInfoObject.path("system").path("idle").longValue();
@@ -467,9 +460,11 @@ public class MainActivity extends Activity {
                 PackageInfo packageInfo = packageManager.getPackageInfo(applicationInfo.packageName, 0);
                 String json = monitorInfoObject.toString();
                 String dateTimeInString = simpleDateFormat.format(new Date());
-                Logger.d(TAG, String.format("%s\t%s\t%s\t%s\t%s\t%.2f\t%.2f", dateTimeInString, applicationInfo.packageName, packageInfo.versionName, packageInfo.versionCode, json, systemCpuUsage, appCpuUsage));
-                writer.write(String.format("%s\t%s\t%s\t%s\t%s\t%f\t%f\n", dateTimeInString, packageInfo.packageName, packageInfo.versionName, packageInfo.versionCode, json, systemCpuUsage, appCpuUsage));
+                String logString = String.format("%s\t%s\t%s\t%s\t%s\t%f\t%f\t%d", dateTimeInString, packageInfo.packageName, packageInfo.versionName, packageInfo.versionCode, json, systemCpuUsage, appCpuUsage,currentAppMemoryUsage);
+                Logger.d(TAG, logString);
+                writer.write(logString + "\n");
                 writer.flush();
+                sendAppendTextMsg(logString + "\n");
             } catch (Exception e) {
                 Logger.w(TAG, "failed to monitoring performance", e);
                 sendAppendTextMsg("failed to monitoring performance,please restart\n");
